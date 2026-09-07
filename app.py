@@ -16,7 +16,7 @@ st.set_page_config(
 
 
 # ==================================================
-# LOAD ML MODEL
+# LOAD TRAINED ML MODEL
 # ==================================================
 
 @st.cache_resource
@@ -60,6 +60,7 @@ def get_ollama_client():
 
 def clean_text(text):
 
+    # Convert text to lowercase
     text = text.lower()
 
     # Remove URLs
@@ -69,21 +70,21 @@ def clean_text(text):
         text
     )
 
-    # Remove mentions
+    # Remove social-media mentions
     text = re.sub(
         r"@\w+",
         "",
         text
     )
 
-    # Remove hashtag symbol but keep the word
+    # Remove hashtag symbol but keep the hashtag word
     text = re.sub(
         r"#",
         "",
         text
     )
 
-    # Keep letters and spaces
+    # Keep only English letters and spaces
     text = re.sub(
         r"[^a-z\s]",
         " ",
@@ -101,25 +102,30 @@ def clean_text(text):
 
 
 # ==================================================
-# ML PREDICTION
+# ML PREDICTION FUNCTION
 # ==================================================
 
 def predict_message(message):
 
+    # Apply same cleaning used during training
     cleaned_message = clean_text(message)
 
+    # Convert text into TF-IDF numerical features
     vector = tfidf.transform(
         [cleaned_message]
     )
 
+    # Predict class
     prediction = model.predict(
         vector
     )[0]
 
+    # Get probability estimates
     probabilities = model.predict_proba(
         vector
     )[0]
 
+    # Probability for class 1 = Disaster
     disaster_probability = probabilities[1]
 
     return prediction, disaster_probability
@@ -133,12 +139,14 @@ def generate_ai_report(results):
 
     client = get_ollama_client()
 
+    # Keep track of messages classified as Disaster
     disaster_messages = [
         item
         for item in results
         if item["prediction"] == "Disaster"
     ]
 
+    # Convert ML outputs into text for the LLM
     results_text = ""
 
     for i, item in enumerate(
@@ -153,39 +161,73 @@ def generate_ai_report(results):
             f"{item['probability']:.2f}%\n"
         )
 
+    # Prompt used only for report curation
     prompt = f"""
-You are assisting with crisis-information curation.
+You are an AI report-curation assistant for CrisisLens.
 
-The messages below were first classified by a machine-learning
-model. You are NOT performing the classification yourself.
+The messages below have ALREADY been classified by a trained
+machine-learning model.
 
-The ML classifier is a TF-IDF + Logistic Regression model.
+You must NOT perform your own disaster classification and must
+NOT override the ML model's labels.
+
+Classifier:
+TF-IDF + Logistic Regression
 
 Total messages analysed: {len(results)}
-Messages classified as potential disasters: {len(disaster_messages)}
+Messages classified as Disaster: {len(disaster_messages)}
 
 Machine-learning results:
 {results_text}
 
-Create a concise, professional incident-screening report.
+Create a concise professional incident-screening report using
+ONLY the information provided above.
 
-Use these sections:
+Use exactly these sections:
 
 1. Executive Summary
 2. Potential Incident Signals
 3. Highest-Priority Messages
-4. Common Themes
-5. Recommended Human Review
-6. Limitations
+4. Non-Disaster Messages
+5. Common Themes
+6. Recommended Human Review
+7. Limitations
 
-Important rules:
-- Treat all social-media messages as unverified reports.
-- Do not claim that any disaster definitely occurred.
-- Do not invent locations, casualties, events, or facts.
-- Base the report only on the messages and ML results provided.
-- Clearly distinguish ML predictions from verified information.
-- Prioritize higher disaster-probability messages for human review.
-- State that the system may produce false positives and false negatives.
+Rules:
+
+- Only messages labelled "Disaster" by the ML model should appear
+  under Potential Incident Signals and Highest-Priority Messages.
+
+- Messages labelled "Not Disaster" must remain under
+  Non-Disaster Messages. Do not reclassify them.
+
+- Rank Disaster messages by their supplied disaster probability.
+
+- Treat every message as an unverified social-media report.
+
+- Do not state that any disaster definitely occurred.
+
+- Do not invent dates, timestamps, locations, casualties,
+  organizations, teams, signatories, infrastructure damage,
+  authorities, or other facts.
+
+- Do not assume the messages were posted at the same time or
+  originated from the same geographic area.
+
+- Do not add a report date unless one was explicitly provided.
+
+- Do not invent relationships between separate messages.
+
+- Do not call the probability a certainty.
+
+- Recommended Human Review should give only general verification
+  guidance such as checking authoritative sources and reviewing
+  high-probability messages.
+
+- Clearly state that ML models can produce both false positives
+  and false negatives.
+
+- Keep the report concise and factual.
 """
 
     response = client.chat(
@@ -232,6 +274,10 @@ with st.sidebar:
         "Best C: 5.0"
     )
 
+    st.caption(
+        "Feature Extraction: TF-IDF"
+    )
+
 
 # ==================================================
 # DASHBOARD
@@ -251,12 +297,20 @@ if mode == "Dashboard":
         identify whether a social-media message potentially
         refers to a real disaster.
 
-        The system uses TF-IDF text features and a tuned
-        Logistic Regression classifier.
+        The classification layer uses TF-IDF text features
+        and a tuned Logistic Regression classifier.
+
+        Generative AI is used downstream to curate multiple
+        classification results into a structured incident
+        screening report.
         """
     )
 
     st.divider()
+
+    # ----------------------------------------------
+    # FINAL MODEL PERFORMANCE
+    # ----------------------------------------------
 
     st.subheader(
         "Final Model Performance"
@@ -265,30 +319,38 @@ if mode == "Dashboard":
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
+
         st.metric(
             "Accuracy",
             "78.82%"
         )
 
     with col2:
+
         st.metric(
             "Precision",
             "80.23%"
         )
 
     with col3:
+
         st.metric(
             "Recall",
             "66.77%"
         )
 
     with col4:
+
         st.metric(
             "F1 Score",
             "72.88%"
         )
 
     st.divider()
+
+    # ----------------------------------------------
+    # MODEL CONFIGURATION
+    # ----------------------------------------------
 
     st.subheader(
         "Model Configuration"
@@ -332,6 +394,10 @@ if mode == "Dashboard":
 
     st.divider()
 
+    # ----------------------------------------------
+    # DATASET INFORMATION
+    # ----------------------------------------------
+
     st.subheader(
         "Dataset"
     )
@@ -342,10 +408,45 @@ if mode == "Dashboard":
         **Natural Language Processing with Disaster Tweets**
         dataset.
 
+        The original training dataset contained 7,613 rows.
+
         After removing conflicting labels and duplicate
         tweet texts, approximately **7,485 samples**
         remained for modelling.
         """
+    )
+
+    st.divider()
+
+    # ----------------------------------------------
+    # SYSTEM ARCHITECTURE
+    # ----------------------------------------------
+
+    st.subheader(
+        "System Workflow"
+    )
+
+    st.code(
+        """
+Social-Media Message
+        ↓
+Text Cleaning
+        ↓
+TF-IDF Feature Extraction
+        ↓
+Logistic Regression
+        ↓
+Disaster / Not Disaster
+        ↓
+Probability Score
+        ↓
+Multiple Classification Results
+        ↓
+Ollama Cloud LLM
+        ↓
+AI-Curated Incident Report
+        """,
+        language=None
     )
 
     st.info(
@@ -370,8 +471,9 @@ elif mode == "Classify Message":
     st.write(
         """
         Enter a social-media message below.
-        CrisisLens will estimate whether it potentially
-        refers to a real disaster.
+
+        CrisisLens will estimate whether the message
+        potentially refers to a real disaster.
         """
     )
 
@@ -470,8 +572,10 @@ elif mode == "Classify Message":
             st.warning(
                 """
                 This prediction is not verification of a
-                real-world emergency. Potential disaster
-                messages should be reviewed by a human.
+                real-world emergency.
+
+                Potential disaster messages should be
+                reviewed by a human.
                 """
             )
 
@@ -489,12 +593,14 @@ elif mode == "AI Crisis Report":
     st.write(
         """
         Paste multiple social-media messages below,
-        with one message on each line.
+        with **one message on each line**.
 
-        CrisisLens first classifies every message using
-        the trained machine-learning model. The results
-        are then curated into a structured incident report
-        using generative AI.
+        CrisisLens will first classify every message
+        using the trained machine-learning model.
+
+        The classification results and probability scores
+        will then be passed to generative AI to create a
+        structured incident-screening report.
         """
     )
 
@@ -515,6 +621,10 @@ elif mode == "AI Crisis Report":
         type="primary"
     ):
 
+        # ------------------------------------------
+        # SPLIT INPUT INTO SEPARATE MESSAGES
+        # ------------------------------------------
+
         messages = [
             line.strip()
             for line in batch_text.splitlines()
@@ -530,6 +640,10 @@ elif mode == "AI Crisis Report":
         else:
 
             results = []
+
+            # --------------------------------------
+            # ML CLASSIFICATION
+            # --------------------------------------
 
             with st.spinner(
                 "Classifying messages..."
@@ -552,6 +666,10 @@ elif mode == "AI Crisis Report":
                         "prediction": label,
                         "probability": probability * 100
                     })
+
+            # --------------------------------------
+            # DISPLAY ML RESULTS
+            # --------------------------------------
 
             st.subheader(
                 "Machine Learning Classification Results"
@@ -579,9 +697,17 @@ elif mode == "AI Crisis Report":
 
                 st.divider()
 
+            # --------------------------------------
+            # SUMMARY COUNTS
+            # --------------------------------------
+
             disaster_count = sum(
                 item["prediction"] == "Disaster"
                 for item in results
+            )
+
+            non_disaster_count = (
+                len(results) - disaster_count
             )
 
             col1, col2, col3 = st.columns(3)
@@ -604,10 +730,14 @@ elif mode == "AI Crisis Report":
 
                 st.metric(
                     "Not Classified as Disaster",
-                    len(results) - disaster_count
+                    non_disaster_count
                 )
 
             st.divider()
+
+            # --------------------------------------
+            # AI REPORT
+            # --------------------------------------
 
             st.subheader(
                 "AI-Curated Incident Report"
@@ -641,6 +771,7 @@ elif mode == "AI Crisis Report":
                 """
                 CrisisLens classifications and AI-generated
                 reports are decision-support outputs only.
+
                 Social-media reports are unverified and should
                 be reviewed by a human before any action is taken.
                 """
