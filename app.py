@@ -152,6 +152,46 @@ st.markdown(
         border-radius: 12px;
     }
 
+        /* ==========================
+       AI REPORT TABLES
+       ========================== */
+
+    [data-testid="stMarkdownContainer"] table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #0f172a !important;
+        border: 1px solid #263244 !important;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    [data-testid="stMarkdownContainer"] thead tr {
+        background: #111827 !important;
+    }
+
+    [data-testid="stMarkdownContainer"] th {
+        color: #f8fafc !important;
+        background: #111827 !important;
+        border: 1px solid #334155 !important;
+        padding: 0.75rem !important;
+        font-weight: 700 !important;
+    }
+
+    [data-testid="stMarkdownContainer"] td {
+        color: #cbd5e1 !important;
+        background: #0f172a !important;
+        border: 1px solid #263244 !important;
+        padding: 0.75rem !important;
+    }
+
+    [data-testid="stMarkdownContainer"] tbody tr:nth-child(even) td {
+        background: #111827 !important;
+    }
+
+    [data-testid="stMarkdownContainer"] strong {
+        color: #f8fafc !important;
+    }
+
     </style>
     """,
     unsafe_allow_html=True
