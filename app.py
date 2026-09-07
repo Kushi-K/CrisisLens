@@ -1,6 +1,4 @@
 import re
-import html
-import textwrap
 import joblib
 import streamlit as st
 from ollama import Client
@@ -19,22 +17,19 @@ st.set_page_config(
 
 
 # ============================================================
-# CUSTOM CSS
+# PROFESSIONAL DARK UI
 # ============================================================
 
 st.markdown(
     """
     <style>
 
-    /* ==========================
-       GLOBAL APP
-       ========================== */
-
+    /* Main app background */
     .stApp {
         background:
             radial-gradient(
                 circle at top right,
-                rgba(239, 68, 68, 0.07),
+                rgba(239, 68, 68, 0.08),
                 transparent 28%
             ),
             linear-gradient(
@@ -42,265 +37,79 @@ st.markdown(
                 #090e18 0%,
                 #0b1220 100%
             );
-        color: #e5e7eb;
     }
 
+    /* Main content width */
     .block-container {
         max-width: 1250px;
-        padding-top: 2rem;
+        padding-top: 2.2rem;
         padding-bottom: 3rem;
     }
 
+    /* Transparent top header */
     [data-testid="stHeader"] {
         background: transparent;
     }
 
-    h1, h2, h3 {
-        color: #f8fafc;
-    }
-
-    p {
-        color: #cbd5e1;
-    }
-
-
-    /* ==========================
-       SIDEBAR
-       ========================== */
-
+    /* Sidebar */
     [data-testid="stSidebar"] {
         background: #070c14;
         border-right: 1px solid #1e293b;
     }
 
-    .sidebar-brand {
-        font-size: 1.4rem;
-        font-weight: 800;
-        letter-spacing: 0.11em;
-        color: #f8fafc;
-        margin-bottom: 0.25rem;
-    }
-
-    .sidebar-subtitle {
-        color: #64748b;
-        font-size: 0.82rem;
-        line-height: 1.55;
-        margin-bottom: 1.4rem;
-    }
-
-    .sidebar-panel {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        border-radius: 14px;
-        background: #0f172a;
-        border: 1px solid #1e293b;
-    }
-
-    .sidebar-label {
-        color: #64748b;
-        font-size: 0.68rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        font-weight: 700;
-        margin-bottom: 0.25rem;
-    }
-
-    .sidebar-value {
-        color: #e2e8f0;
-        font-size: 0.82rem;
-        margin-bottom: 0.8rem;
-    }
-
-    .status-dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #22c55e;
-        margin-right: 7px;
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
-    }
-
-
-    /* ==========================
-       HERO
-       ========================== */
-
-    .hero {
-        position: relative;
-        overflow: hidden;
-        padding: 2.3rem 2.5rem;
-        border-radius: 20px;
-        border: 1px solid #263244;
-        background:
-            linear-gradient(
-                135deg,
-                rgba(15, 23, 42, 0.98),
-                rgba(30, 41, 59, 0.88)
-            );
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
-        margin-bottom: 2rem;
-    }
-
-    .hero:after {
-        content: "";
-        position: absolute;
-        width: 260px;
-        height: 260px;
-        right: -90px;
-        top: -120px;
-        border-radius: 50%;
-        background: rgba(239, 68, 68, 0.08);
-    }
-
-    .hero-kicker {
-        color: #f87171;
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        margin-bottom: 0.6rem;
-    }
-
-    .hero-title {
-        color: #f8fafc;
-        font-size: 2.7rem;
-        font-weight: 800;
-        line-height: 1.05;
-        margin-bottom: 0.8rem;
-    }
-
-    .hero-copy {
+    [data-testid="stSidebar"] p {
         color: #94a3b8;
-        font-size: 1rem;
-        line-height: 1.7;
-        max-width: 780px;
     }
 
-    .hero-tags {
-        margin-top: 1.25rem;
+    /* Headings */
+    h1 {
+        color: #f8fafc !important;
+        letter-spacing: -0.04em;
     }
 
-    .hero-tag {
-        display: inline-block;
-        padding: 0.35rem 0.7rem;
-        margin-right: 0.35rem;
-        margin-bottom: 0.35rem;
-        border-radius: 999px;
-        border: 1px solid #334155;
-        background: rgba(15, 23, 42, 0.65);
+    h2, h3, h4 {
+        color: #f1f5f9 !important;
+    }
+
+    /* Normal text */
+    p, li {
         color: #cbd5e1;
-        font-size: 0.72rem;
     }
 
-
-    /* ==========================
-       SECTION TITLES
-       ========================== */
-
-    .section-kicker {
-        color: #64748b;
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        margin-top: 1.5rem;
-        margin-bottom: 0.2rem;
+    /* Bordered containers */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(15, 23, 42, 0.78);
+        border: 1px solid #263244 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
     }
 
-    .section-title {
-        color: #f1f5f9;
-        font-size: 1.35rem;
-        font-weight: 750;
-        margin-bottom: 1rem;
-    }
-
-
-    /* ==========================
-       METRIC CARDS
-       ========================== */
-
-    .metric-card {
-        min-height: 135px;
-        padding: 1.2rem;
-        border-radius: 16px;
-        background: rgba(15, 23, 42, 0.92);
-        border: 1px solid #263244;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.16);
-    }
-
-    .metric-label {
-        color: #64748b;
-        font-size: 0.7rem;
-        font-weight: 700;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-    }
-
-    .metric-value {
-        color: #f8fafc;
-        font-size: 2rem;
-        font-weight: 800;
-        margin-top: 0.45rem;
-    }
-
-    .metric-note {
-        color: #64748b;
-        font-size: 0.72rem;
-        margin-top: 0.25rem;
-        line-height: 1.4;
-    }
-
-
-    /* ==========================
-       INFORMATION CARDS
-       ========================== */
-
-    .info-card {
+    /* Metrics */
+    [data-testid="stMetric"] {
         background: rgba(15, 23, 42, 0.9);
         border: 1px solid #263244;
-        border-radius: 16px;
-        padding: 1.4rem;
-        min-height: 330px;
+        border-radius: 14px;
+        padding: 1rem;
+        min-height: 125px;
     }
 
-    .info-card-title {
-        color: #f1f5f9;
-        font-size: 1rem;
-        font-weight: 700;
-        margin-bottom: 0.9rem;
+    [data-testid="stMetricLabel"] {
+        color: #64748b !important;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
     }
 
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.6rem 0;
-        border-bottom: 1px solid #1e293b;
-        color: #94a3b8;
-        font-size: 0.84rem;
+    [data-testid="stMetricValue"] {
+        color: #f8fafc !important;
     }
 
-    .info-row:last-child {
-        border-bottom: none;
-    }
-
-    .info-value {
-        color: #e2e8f0;
-        font-weight: 600;
-        text-align: right;
-    }
-
-
-    /* ==========================
-       INPUT BOXES
-       ========================== */
-
+    /* Text areas */
     .stTextArea textarea {
         background: #0f172a !important;
         color: #f8fafc !important;
         border: 1px solid #334155 !important;
-        border-radius: 13px !important;
+        border-radius: 12px !important;
     }
 
     .stTextArea textarea:focus {
@@ -308,181 +117,45 @@ st.markdown(
         box-shadow: 0 0 0 1px #64748b !important;
     }
 
-
-    /* ==========================
-       BUTTONS
-       ========================== */
-
-    div[data-testid="stButton"] button {
-        border-radius: 11px;
+    /* Buttons */
+    .stButton > button {
         min-height: 46px;
+        border-radius: 10px;
         font-weight: 700;
     }
 
-
-    /* ==========================
-       SINGLE RESULT
-       ========================== */
-
-    .result-card {
-        padding: 1.4rem 1.5rem;
-        border-radius: 16px;
-        margin-top: 1.2rem;
-        margin-bottom: 1rem;
-        background: #0f172a;
+    .stDownloadButton > button {
+        min-height: 46px;
+        border-radius: 10px;
+        font-weight: 700;
     }
 
-    .result-danger {
-        border: 1px solid rgba(239, 68, 68, 0.4);
-        box-shadow: inset 4px 0 #ef4444;
-    }
-
-    .result-safe {
-        border: 1px solid rgba(34, 197, 94, 0.35);
-        box-shadow: inset 4px 0 #22c55e;
-    }
-
-    .result-label {
-        color: #64748b;
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-    }
-
-    .result-title {
-        color: #f8fafc;
-        font-size: 1.5rem;
-        font-weight: 800;
-        margin-top: 0.35rem;
-    }
-
-    .result-copy {
-        color: #94a3b8;
-        margin-top: 0.3rem;
-    }
-
-    .probability-bar {
-        background: #1e293b;
-        height: 8px;
-        border-radius: 999px;
-        overflow: hidden;
-        margin-top: 0.7rem;
-    }
-
-    .probability-danger {
-        height: 100%;
-        background: #ef4444;
+    /* Progress bar */
+    .stProgress > div > div > div > div {
         border-radius: 999px;
     }
 
-    .probability-safe {
-        height: 100%;
-        background: #22c55e;
-        border-radius: 999px;
+    /* Divider */
+    hr {
+        border-color: #1e293b !important;
     }
 
+    /* Captions */
+    .stCaption {
+        color: #64748b !important;
+    }
 
-    /* ==========================
-       BATCH RESULT CARDS
-       ========================== */
-
-    .batch-card {
-        padding: 1rem 1.1rem;
-        border-radius: 13px;
-        background: #0f172a;
+    /* Expander */
+    [data-testid="stExpander"] {
+        background: rgba(15, 23, 42, 0.65);
         border: 1px solid #263244;
-        margin-bottom: 0.75rem;
-    }
-
-    .batch-message {
-        color: #e2e8f0;
-        font-size: 0.9rem;
-        margin-bottom: 0.55rem;
-        line-height: 1.5;
-    }
-
-    .badge-danger,
-    .badge-safe,
-    .badge-review {
-        display: inline-block;
-        padding: 0.25rem 0.58rem;
-        border-radius: 999px;
-        margin-right: 0.35rem;
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .badge-danger {
-        color: #f87171;
-        background: rgba(239, 68, 68, 0.1);
-        border: 1px solid rgba(239, 68, 68, 0.28);
-    }
-
-    .badge-safe {
-        color: #4ade80;
-        background: rgba(34, 197, 94, 0.08);
-        border: 1px solid rgba(34, 197, 94, 0.24);
-    }
-
-    .badge-review {
-        color: #fbbf24;
-        background: rgba(245, 158, 11, 0.08);
-        border: 1px solid rgba(245, 158, 11, 0.25);
-    }
-
-    .prob-text {
-        color: #94a3b8;
-        font-size: 0.75rem;
-    }
-
-
-    /* ==========================
-       DISCLAIMER + FOOTER
-       ========================== */
-
-    .disclaimer {
-        margin-top: 1.5rem;
-        padding: 1rem 1.15rem;
         border-radius: 12px;
-        background: rgba(15, 23, 42, 0.78);
-        border: 1px solid #263244;
-        color: #64748b;
-        font-size: 0.76rem;
-        line-height: 1.6;
-    }
-
-    .footer {
-        margin-top: 3rem;
-        padding-top: 1rem;
-        border-top: 1px solid #1e293b;
-        color: #475569;
-        font-size: 0.7rem;
-        text-align: center;
     }
 
     </style>
     """,
     unsafe_allow_html=True
 )
-
-
-# ============================================================
-# SAFE HTML RENDERING
-# ============================================================
-
-def render_html(content):
-
-    cleaned_html = textwrap.dedent(
-        content
-    ).strip()
-
-    st.markdown(
-        cleaned_html,
-        unsafe_allow_html=True
-    )
 
 
 # ============================================================
@@ -507,7 +180,7 @@ tfidf, model = load_models()
 
 
 # ============================================================
-# OLLAMA CLOUD
+# OLLAMA CLOUD CLIENT
 # ============================================================
 
 @st.cache_resource
@@ -530,30 +203,35 @@ def clean_text(text):
 
     text = text.lower()
 
+    # Remove URLs
     text = re.sub(
         r"http\S+|www\S+",
         "",
         text
     )
 
+    # Remove @mentions
     text = re.sub(
         r"@\w+",
         "",
         text
     )
 
+    # Remove # but keep hashtag word
     text = re.sub(
         r"#",
         "",
         text
     )
 
+    # Keep English letters and spaces
     text = re.sub(
         r"[^a-z\s]",
         " ",
         text
     )
 
+    # Remove extra spaces
     text = re.sub(
         r"\s+",
         " ",
@@ -564,7 +242,7 @@ def clean_text(text):
 
 
 # ============================================================
-# PREDICTION
+# ML PREDICTION
 # ============================================================
 
 def predict_message(message):
@@ -596,7 +274,7 @@ def predict_message(message):
 
 
 # ============================================================
-# AI INCIDENT REPORT
+# AI REPORT GENERATION
 # ============================================================
 
 def generate_ai_report(results):
@@ -626,11 +304,11 @@ def generate_ai_report(results):
     prompt = f"""
 You are an AI report-curation assistant for CrisisLens.
 
-The messages below have ALREADY been classified by a trained
-machine-learning model.
+The following messages have ALREADY been classified by a
+trained machine-learning model.
 
-You must NOT perform your own disaster classification and must
-NOT override the ML model's labels.
+You must NOT perform your own disaster classification.
+You must NOT override the ML model's labels.
 
 Classifier:
 TF-IDF + Logistic Regression
@@ -641,8 +319,8 @@ Messages classified as Disaster: {len(disaster_messages)}
 Machine-learning results:
 {results_text}
 
-Create a concise professional incident-screening report using
-ONLY the information provided above.
+Create a concise professional incident-screening report
+using ONLY the supplied messages and ML outputs.
 
 Use exactly these sections:
 
@@ -656,39 +334,41 @@ Use exactly these sections:
 
 Rules:
 
-- Only messages labelled "Disaster" by the ML model should appear
-  under Potential Incident Signals and Highest-Priority Messages.
+- Only messages labelled "Disaster" by the ML classifier
+  may appear under Potential Incident Signals and
+  Highest-Priority Messages.
 
 - Messages labelled "Not Disaster" must remain under
   Non-Disaster Messages.
 
 - Do not reclassify any message.
 
-- Rank Disaster messages by their supplied disaster probability.
+- Rank Disaster messages using their supplied disaster
+  probabilities.
 
 - Treat every message as an unverified social-media report.
 
-- Do not state that any disaster definitely occurred.
+- Do not claim that any event definitely occurred.
 
 - Do not invent dates, timestamps, locations, casualties,
-  organizations, teams, signatories, infrastructure damage,
-  authorities, or other facts.
+  authorities, organizations, infrastructure damage,
+  signatories, or other facts.
 
-- Do not assume the messages came from the same time period
-  or geographic area.
+- Do not assume that separate messages were posted at the
+  same time or originate from the same location.
 
-- Do not invent relationships between separate messages.
+- Do not invent relationships between messages.
 
-- Do not call probability a certainty.
+- Probability is not certainty.
 
-- Avoid adding hazard categories unless directly supported
-  by the message.
+- Avoid unnecessary scientific categorization unless
+  directly supported by the message itself.
 
 - Recommended Human Review should contain only general
   verification guidance.
 
-- Clearly state that ML systems can produce false positives
-  and false negatives.
+- State clearly that the classifier may produce false
+  positives and false negatives.
 
 - Keep the report concise and factual.
 """
@@ -707,75 +387,18 @@ Rules:
 
 
 # ============================================================
-# UI HELPERS
-# ============================================================
-
-def section_header(kicker, title):
-
-    render_html(
-        f"""
-        <div class="section-kicker">
-            {kicker}
-        </div>
-
-        <div class="section-title">
-            {title}
-        </div>
-        """
-    )
-
-
-def metric_card(label, value, note):
-
-    render_html(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-label">
-                {label}
-            </div>
-
-            <div class="metric-value">
-                {value}
-            </div>
-
-            <div class="metric-note">
-                {note}
-            </div>
-
-        </div>
-        """
-    )
-
-
-def show_footer():
-
-    render_html(
-        """
-        <div class="footer">
-            CrisisLens · ML Classification + AI-Assisted Incident Curation
-        </div>
-        """
-    )
-
-
-# ============================================================
 # SIDEBAR
 # ============================================================
 
 with st.sidebar:
 
-    render_html(
-        """
-        <div class="sidebar-brand">
-            CRISISLENS
-        </div>
+    st.title("CRISISLENS")
 
-        <div class="sidebar-subtitle">
-            Disaster intelligence and incident-screening platform
-        </div>
-        """
+    st.caption(
+        "Disaster intelligence and incident-screening platform"
     )
+
+    st.divider()
 
     mode = st.radio(
         "Navigation",
@@ -783,49 +406,41 @@ with st.sidebar:
             "Overview",
             "Message Analysis",
             "Incident Intelligence"
-        ],
-        label_visibility="collapsed"
+        ]
     )
 
-    render_html(
-        """
-        <div class="sidebar-panel">
+    st.divider()
 
-            <div class="sidebar-label">
-                System
-            </div>
+    st.caption("SYSTEM STATUS")
 
-            <div class="sidebar-value">
-                <span class="status-dot"></span>
-                Operational
-            </div>
+    st.success(
+        "● Operational"
+    )
 
-            <div class="sidebar-label">
-                Classifier
-            </div>
+    st.caption("CLASSIFIER")
 
-            <div class="sidebar-value">
-                Logistic Regression · C = 5.0
-            </div>
+    st.write(
+        "**Logistic Regression**"
+    )
 
-            <div class="sidebar-label">
-                Feature Layer
-            </div>
+    st.caption(
+        "Best C = 5.0"
+    )
 
-            <div class="sidebar-value">
-                TF-IDF · Unigrams + Bigrams
-            </div>
+    st.caption("FEATURE LAYER")
 
-            <div class="sidebar-label">
-                AI Curation
-            </div>
+    st.write(
+        "**TF-IDF**"
+    )
 
-            <div class="sidebar-value">
-                Ollama Cloud
-            </div>
+    st.caption(
+        "Unigrams + Bigrams"
+    )
 
-        </div>
-        """
+    st.caption("AI CURATION")
+
+    st.write(
+        "**Ollama Cloud**"
     )
 
 
@@ -835,57 +450,57 @@ with st.sidebar:
 
 if mode == "Overview":
 
-    render_html(
-        """
-        <div class="hero">
+    # --------------------------------------------------------
+    # HERO
+    # --------------------------------------------------------
 
-            <div class="hero-kicker">
-                Disaster Intelligence Platform
-            </div>
+    with st.container(
+        border=True
+    ):
 
-            <div class="hero-title">
-                CrisisLens
-            </div>
+        st.caption(
+            "DISASTER INTELLIGENCE PLATFORM"
+        )
 
-            <div class="hero-copy">
-                Machine-learning driven disaster-message screening
-                with downstream AI-assisted incident curation.
-                CrisisLens transforms noisy social-media signals
-                into structured, reviewable intelligence for
-                human verification.
-            </div>
+        st.title(
+            "CrisisLens"
+        )
 
-            <div class="hero-tags">
+        st.markdown(
+            """
+            ### Machine-learning disaster screening with
+            AI-assisted incident curation
 
-                <span class="hero-tag">
-                    Supervised ML
-                </span>
+            CrisisLens transforms noisy social-media messages
+            into structured, reviewable intelligence.
 
-                <span class="hero-tag">
-                    TF-IDF
-                </span>
+            The classification layer is powered by a trained
+            **TF-IDF + Logistic Regression** pipeline, while
+            generative AI is used only downstream to curate
+            multiple ML results into a structured report.
+            """
+        )
 
-                <span class="hero-tag">
-                    Logistic Regression
-                </span>
+        st.write(
+            "`Supervised ML`  "
+            "`TF-IDF`  "
+            "`Logistic Regression`  "
+            "`Ollama Cloud`  "
+            "`Human-in-the-loop`"
+        )
 
-                <span class="hero-tag">
-                    Ollama Cloud
-                </span>
+    st.write("")
 
-                <span class="hero-tag">
-                    Human-in-the-loop
-                </span>
+    # --------------------------------------------------------
+    # MODEL PERFORMANCE
+    # --------------------------------------------------------
 
-            </div>
-
-        </div>
-        """
+    st.caption(
+        "MODEL PERFORMANCE"
     )
 
-    section_header(
-        "Model Performance",
-        "Holdout evaluation"
+    st.subheader(
+        "Holdout Evaluation"
     )
 
     col1, col2, col3, col4 = (
@@ -894,169 +509,188 @@ if mode == "Overview":
 
     with col1:
 
-        metric_card(
+        st.metric(
             "Accuracy",
             "78.82%",
-            "Overall correct classifications"
+            help=(
+                "Percentage of all test messages "
+                "classified correctly."
+            )
         )
 
     with col2:
 
-        metric_card(
+        st.metric(
             "Precision",
             "80.23%",
-            "Reliability of disaster predictions"
+            help=(
+                "When CrisisLens predicts Disaster, "
+                "how often that prediction is correct."
+            )
         )
 
     with col3:
 
-        metric_card(
+        st.metric(
             "Recall",
             "66.77%",
-            "Actual disaster messages detected"
+            help=(
+                "Percentage of real disaster messages "
+                "detected by the classifier."
+            )
         )
 
     with col4:
 
-        metric_card(
+        st.metric(
             "F1 Score",
             "72.88%",
-            "Precision-recall balance"
+            help=(
+                "Balanced measure of precision "
+                "and recall."
+            )
         )
 
-    section_header(
-        "System Profile",
-        "Model and training configuration"
+    st.write("")
+
+    # --------------------------------------------------------
+    # SYSTEM PROFILE
+    # --------------------------------------------------------
+
+    st.caption(
+        "SYSTEM PROFILE"
+    )
+
+    st.subheader(
+        "Model & Training Configuration"
     )
 
     left, right = st.columns(2)
 
     with left:
 
-        render_html(
-            """
-            <div class="info-card">
+        with st.container(
+            border=True
+        ):
 
-                <div class="info-card-title">
-                    Model Configuration
-                </div>
+            st.markdown(
+                "#### Model Configuration"
+            )
 
-                <div class="info-row">
-                    <span>Algorithm</span>
-                    <span class="info-value">
-                        Logistic Regression
-                    </span>
-                </div>
+            st.write(
+                "**Algorithm**"
+            )
+            st.caption(
+                "Logistic Regression"
+            )
 
-                <div class="info-row">
-                    <span>Feature extraction</span>
-                    <span class="info-value">
-                        TF-IDF
-                    </span>
-                </div>
+            st.write(
+                "**Feature Extraction**"
+            )
+            st.caption(
+                "TF-IDF"
+            )
 
-                <div class="info-row">
-                    <span>N-gram range</span>
-                    <span class="info-value">
-                        (1, 2)
-                    </span>
-                </div>
+            st.write(
+                "**N-gram Range**"
+            )
+            st.caption(
+                "(1, 2) — Unigrams + Bigrams"
+            )
 
-                <div class="info-row">
-                    <span>Maximum features</span>
-                    <span class="info-value">
-                        10,000
-                    </span>
-                </div>
+            st.write(
+                "**Maximum Features**"
+            )
+            st.caption(
+                "10,000"
+            )
 
-                <div class="info-row">
-                    <span>Minimum document frequency</span>
-                    <span class="info-value">
-                        2
-                    </span>
-                </div>
+            st.write(
+                "**Minimum Document Frequency**"
+            )
+            st.caption(
+                "2"
+            )
 
-                <div class="info-row">
-                    <span>Best C</span>
-                    <span class="info-value">
-                        5.0
-                    </span>
-                </div>
-
-            </div>
-            """
-        )
+            st.write(
+                "**Best Regularization C**"
+            )
+            st.caption(
+                "5.0"
+            )
 
     with right:
 
-        render_html(
-            """
-            <div class="info-card">
+        with st.container(
+            border=True
+        ):
 
-                <div class="info-card-title">
-                    Training & Validation
-                </div>
+            st.markdown(
+                "#### Training & Validation"
+            )
 
-                <div class="info-row">
-                    <span>Original rows</span>
-                    <span class="info-value">
-                        7,613
-                    </span>
-                </div>
+            st.write(
+                "**Original Dataset**"
+            )
+            st.caption(
+                "7,613 labelled tweets"
+            )
 
-                <div class="info-row">
-                    <span>Clean samples</span>
-                    <span class="info-value">
-                        7,485
-                    </span>
-                </div>
+            st.write(
+                "**Clean Samples**"
+            )
+            st.caption(
+                "7,485 samples"
+            )
 
-                <div class="info-row">
-                    <span>Training split</span>
-                    <span class="info-value">
-                        80%
-                    </span>
-                </div>
+            st.write(
+                "**Training / Holdout Split**"
+            )
+            st.caption(
+                "80% / 20%"
+            )
 
-                <div class="info-row">
-                    <span>Holdout split</span>
-                    <span class="info-value">
-                        20%
-                    </span>
-                </div>
+            st.write(
+                "**Model Selection**"
+            )
+            st.caption(
+                "Logistic Regression vs Naive Bayes vs Linear SVM"
+            )
 
-                <div class="info-row">
-                    <span>Hyperparameter search</span>
-                    <span class="info-value">
-                        GridSearchCV
-                    </span>
-                </div>
+            st.write(
+                "**Hyperparameter Search**"
+            )
+            st.caption(
+                "GridSearchCV · 5-fold cross-validation"
+            )
 
-                <div class="info-row">
-                    <span>Cross-validation</span>
-                    <span class="info-value">
-                        5 folds
-                    </span>
-                </div>
+            st.write(
+                "**Best CV F1**"
+            )
+            st.caption(
+                "75.54%"
+            )
 
-                <div class="info-row">
-                    <span>Best CV F1</span>
-                    <span class="info-value">
-                        75.54%
-                    </span>
-                </div>
+    st.write("")
 
-            </div>
-            """
-        )
+    # --------------------------------------------------------
+    # ARCHITECTURE
+    # --------------------------------------------------------
 
-    section_header(
-        "Architecture",
-        "From message to actionable review"
+    st.caption(
+        "ARCHITECTURE"
     )
 
-    st.code(
-        """
+    st.subheader(
+        "End-to-End Workflow"
+    )
+
+    with st.container(
+        border=True
+    ):
+
+        st.code(
+            """
 Incoming Social-Media Message
             ↓
        Text Cleaning
@@ -1076,22 +710,18 @@ Incoming Social-Media Message
  AI-Curated Incident Report
             ↓
       Human Verification
-        """,
-        language=None
-    )
+            """,
+            language=None
+        )
 
-    render_html(
+    st.info(
         """
-        <div class="disclaimer">
-            CrisisLens is a decision-support prototype.
-            Model predictions and social-media reports are
-            unverified and require human review before any
-            real-world action is taken.
-        </div>
+        **Decision-support prototype:** CrisisLens predictions
+        and social-media reports are unverified. Important
+        signals must be independently reviewed before any
+        real-world action is taken.
         """
     )
-
-    show_footer()
 
 
 # ============================================================
@@ -1100,31 +730,38 @@ Incoming Social-Media Message
 
 elif mode == "Message Analysis":
 
-    render_html(
-        """
-        <div class="hero">
+    # --------------------------------------------------------
+    # HERO
+    # --------------------------------------------------------
 
-            <div class="hero-kicker">
-                Single Message Screening
-            </div>
+    with st.container(
+        border=True
+    ):
 
-            <div class="hero-title">
-                Message Analysis
-            </div>
+        st.caption(
+            "SINGLE MESSAGE SCREENING"
+        )
 
-            <div class="hero-copy">
-                Analyse an individual social-media message using
-                the trained CrisisLens classifier and inspect the
-                model's estimated disaster probability.
-            </div>
+        st.title(
+            "Message Analysis"
+        )
 
-        </div>
-        """
+        st.markdown(
+            """
+            Analyse an individual social-media message with the
+            trained CrisisLens classifier and inspect the model's
+            estimated disaster probability.
+            """
+        )
+
+    st.write("")
+
+    st.caption(
+        "MESSAGE INPUT"
     )
 
-    section_header(
-        "Input",
-        "Analyse a social-media message"
+    st.subheader(
+        "Analyse a Social-Media Message"
     )
 
     message = st.text_area(
@@ -1163,122 +800,98 @@ elif mode == "Message Analysis":
                 100 - disaster_percent
             )
 
-            if prediction == 1:
+            st.write("")
 
-                card_class = "result-danger"
-                bar_class = "probability-danger"
-                title = "Potential Disaster"
+            # ------------------------------------------------
+            # RESULT
+            # ------------------------------------------------
 
-                description = (
-                    "The trained classifier identified this "
-                    "message as a potential disaster signal."
+            with st.container(
+                border=True
+            ):
+
+                st.caption(
+                    "CLASSIFICATION RESULT"
                 )
 
-            else:
+                if prediction == 1:
 
-                card_class = "result-safe"
-                bar_class = "probability-safe"
-                title = "Not Classified as Disaster"
+                    st.error(
+                        "### Potential Disaster"
+                    )
 
-                description = (
-                    "The trained classifier did not identify "
-                    "this message as a disaster signal."
+                    st.write(
+                        "The trained classifier identified "
+                        "this message as a potential "
+                        "disaster signal."
+                    )
+
+                else:
+
+                    st.success(
+                        "### Not Classified as Disaster"
+                    )
+
+                    st.write(
+                        "The trained classifier did not "
+                        "identify this message as a "
+                        "disaster signal."
+                    )
+
+                st.markdown(
+                    f"**Disaster Probability: "
+                    f"{disaster_percent:.2f}%**"
                 )
 
-            render_html(
-                f"""
-                <div class="result-card {card_class}">
+                st.progress(
+                    float(disaster_probability)
+                )
 
-                    <div class="result-label">
-                        Classification Result
-                    </div>
-
-                    <div class="result-title">
-                        {title}
-                    </div>
-
-                    <div class="result-copy">
-                        {description}
-                    </div>
-
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
-                        margin-top:1.1rem;
-                        color:#cbd5e1;
-                        font-size:0.82rem;
-                    ">
-                        <span>
-                            Disaster probability
-                        </span>
-
-                        <strong>
-                            {disaster_percent:.2f}%
-                        </strong>
-                    </div>
-
-                    <div class="probability-bar">
-
-                        <div
-                            class="{bar_class}"
-                            style="width:{disaster_percent:.2f}%;">
-                        </div>
-
-                    </div>
-
-                </div>
-                """
-            )
+            st.write("")
 
             c1, c2 = st.columns(2)
 
             with c1:
 
-                metric_card(
+                st.metric(
                     "Disaster Probability",
-                    f"{disaster_percent:.2f}%",
-                    "Estimated probability for class 1"
+                    f"{disaster_percent:.2f}%"
                 )
 
             with c2:
 
-                metric_card(
+                st.metric(
                     "Non-Disaster Probability",
-                    f"{non_disaster_percent:.2f}%",
-                    "Estimated probability for class 0"
+                    f"{non_disaster_percent:.2f}%"
                 )
 
             with st.expander(
-                "Processing details"
+                "View Processing Details"
             ):
 
-                st.write(
-                    "**Original message**"
+                st.markdown(
+                    "**Original Message**"
                 )
 
                 st.write(
                     message
                 )
 
-                st.write(
-                    "**Cleaned representation**"
+                st.markdown(
+                    "**Cleaned Representation**"
                 )
 
                 st.code(
                     clean_text(message)
                 )
 
-            render_html(
+            st.warning(
                 """
-                <div class="disclaimer">
-                    Classification probability is a model estimate,
-                    not a certainty. Potential disaster signals
-                    should be independently verified.
-                </div>
+                The displayed probability is a model estimate,
+                not certainty. Potential disaster signals
+                should be independently verified by a human.
                 """
             )
-
-    show_footer()
 
 
 # ============================================================
@@ -1287,48 +900,45 @@ elif mode == "Message Analysis":
 
 elif mode == "Incident Intelligence":
 
-    render_html(
-        """
-        <div class="hero">
+    # --------------------------------------------------------
+    # HERO
+    # --------------------------------------------------------
 
-            <div class="hero-kicker">
-                Batch Screening + Generative AI
-            </div>
+    with st.container(
+        border=True
+    ):
 
-            <div class="hero-title">
-                Incident Intelligence
-            </div>
+        st.caption(
+            "BATCH SCREENING + GENERATIVE AI"
+        )
 
-            <div class="hero-copy">
-                Screen multiple incoming messages using the
-                trained ML classifier, prioritise potential
-                disaster signals, and curate the structured
-                outputs into an AI-assisted incident report.
-            </div>
+        st.title(
+            "Incident Intelligence"
+        )
 
-            <div class="hero-tags">
+        st.markdown(
+            """
+            Screen multiple incoming messages with the trained
+            ML classifier, prioritise potential disaster signals,
+            and curate those structured outputs into an
+            AI-assisted incident-screening report.
+            """
+        )
 
-                <span class="hero-tag">
-                    ML classification first
-                </span>
+        st.write(
+            "`ML classification first`  "
+            "`GenAI curation second`  "
+            "`Human verification required`"
+        )
 
-                <span class="hero-tag">
-                    GenAI curation second
-                </span>
+    st.write("")
 
-                <span class="hero-tag">
-                    Human verification required
-                </span>
-
-            </div>
-
-        </div>
-        """
+    st.caption(
+        "BATCH INPUT"
     )
 
-    section_header(
-        "Batch Input",
-        "Enter one message per line"
+    st.subheader(
+        "Enter One Message Per Line"
     )
 
     batch_text = st.text_area(
@@ -1366,6 +976,10 @@ elif mode == "Incident Intelligence":
 
             results = []
 
+            # ------------------------------------------------
+            # ML CLASSIFICATION
+            # ------------------------------------------------
+
             with st.spinner(
                 "Running machine-learning classification..."
             ):
@@ -1398,153 +1012,164 @@ elif mode == "Incident Intelligence":
                 - disaster_count
             )
 
-            section_header(
-                "Classification Summary",
-                "Machine-learning screening results"
+            st.write("")
+
+            # ------------------------------------------------
+            # SUMMARY
+            # ------------------------------------------------
+
+            st.caption(
+                "CLASSIFICATION SUMMARY"
+            )
+
+            st.subheader(
+                "Machine-Learning Screening Results"
             )
 
             c1, c2, c3 = st.columns(3)
 
             with c1:
 
-                metric_card(
+                st.metric(
                     "Messages Analysed",
-                    str(len(results)),
-                    "Total submitted messages"
+                    len(results)
                 )
 
             with c2:
 
-                metric_card(
+                st.metric(
                     "Potential Disasters",
-                    str(disaster_count),
-                    "Messages classified as Disaster"
+                    disaster_count
                 )
 
             with c3:
 
-                metric_card(
+                st.metric(
                     "Non-Disaster",
-                    str(non_disaster_count),
-                    "Messages outside the disaster class"
+                    non_disaster_count
                 )
 
-            st.markdown(
-                "<br>",
-                unsafe_allow_html=True
-            )
+            st.write("")
+
+            # ------------------------------------------------
+            # INDIVIDUAL RESULTS
+            # ------------------------------------------------
 
             for i, item in enumerate(
                 results,
                 start=1
             ):
 
-                safe_message = html.escape(
-                    item["message"]
-                )
-
                 probability = (
                     item["probability"]
                 )
 
-                if (
-                    item["prediction"]
-                    == "Disaster"
+                with st.container(
+                    border=True
                 ):
 
-                    classification_class = (
-                        "badge-danger"
+                    top_left, top_right = (
+                        st.columns(
+                            [4, 1]
+                        )
                     )
 
-                    if probability >= 80:
+                    with top_left:
 
-                        priority_label = (
-                            "High Priority"
+                        st.markdown(
+                            f"#### Message {i}"
                         )
 
-                        priority_class = (
-                            "badge-danger"
+                        st.write(
+                            item["message"]
                         )
+
+                    with top_right:
+
+                        st.metric(
+                            "Probability",
+                            f"{probability:.1f}%"
+                        )
+
+                    if (
+                        item["prediction"]
+                        == "Disaster"
+                    ):
+
+                        st.error(
+                            "Potential Disaster"
+                        )
+
+                        if probability >= 80:
+
+                            st.caption(
+                                "Priority: HIGH — presentation "
+                                "priority only"
+                            )
+
+                        else:
+
+                            st.caption(
+                                "Priority: REVIEW — presentation "
+                                "priority only"
+                            )
 
                     else:
 
-                        priority_label = (
-                            "Review"
+                        st.success(
+                            "Not Classified as Disaster"
                         )
 
-                        priority_class = (
-                            "badge-review"
+                        st.caption(
+                            "Priority: LOWER SIGNAL"
                         )
-
-                else:
-
-                    classification_class = (
-                        "badge-safe"
-                    )
-
-                    priority_label = (
-                        "Lower Signal"
-                    )
-
-                    priority_class = (
-                        "badge-safe"
-                    )
-
-                render_html(
-                    f"""
-                    <div class="batch-card">
-
-                        <div class="batch-message">
-                            <strong>#{i}</strong>
-                            &nbsp;
-                            {safe_message}
-                        </div>
-
-                        <span class="{classification_class}">
-                            {item["prediction"]}
-                        </span>
-
-                        <span class="{priority_class}">
-                            {priority_label}
-                        </span>
-
-                        <span class="prob-text">
-                            Disaster probability:
-                            {probability:.2f}%
-                        </span>
-
-                    </div>
-                    """
-                )
 
             st.caption(
-                "Priority badges are only a presentation layer. "
-                "They do not alter the ML classifier's prediction."
+                """
+                Priority labels are a presentation layer only.
+                They do not alter the Logistic Regression
+                classifier or its decision threshold.
+                """
             )
 
-            section_header(
-                "AI Curation",
-                "Incident-screening report"
+            st.write("")
+
+            # ------------------------------------------------
+            # AI REPORT
+            # ------------------------------------------------
+
+            st.caption(
+                "AI CURATION"
+            )
+
+            st.subheader(
+                "Incident-Screening Report"
             )
 
             try:
 
                 with st.spinner(
-                    "Curating classification results with Ollama Cloud..."
+                    "Curating ML results with Ollama Cloud..."
                 ):
 
                     report = generate_ai_report(
                         results
                     )
 
-                st.markdown(
-                    report
-                )
+                with st.container(
+                    border=True
+                ):
+
+                    st.markdown(
+                        report
+                    )
 
                 st.download_button(
                     label="Download Incident Report",
                     data=report,
-                    file_name="crisislens_incident_report.txt",
+                    file_name=(
+                        "crisislens_incident_report.txt"
+                    ),
                     mime="text/plain",
                     use_container_width=True
                 )
@@ -1559,16 +1184,22 @@ elif mode == "Incident Intelligence":
                     e
                 )
 
-            render_html(
+            st.warning(
                 """
-                <div class="disclaimer">
-                    CrisisLens classifications and AI-generated
-                    reports are decision-support outputs only.
-                    Social-media reports remain unverified.
-                    Important signals should be validated by a
-                    human using authoritative sources.
-                </div>
+                CrisisLens classifications and AI-generated
+                reports are decision-support outputs only.
+                Social-media reports remain unverified and
+                important signals require human validation.
                 """
             )
 
-    show_footer()
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.divider()
+
+st.caption(
+    "CrisisLens · ML Classification + AI-Assisted Incident Curation"
+)
